@@ -1,36 +1,33 @@
-import OpenAI from "openai";
-//const openai = require("openai");
-
-const openai = new OpenAI();
-
-const assistantPrompt = "You are a helpful assistant."
-
-
-function askAssistant() {
-    const question = document.getElementById("inputText").value;
-    answer(text);
-}
-
-async function answer(text = "null") {
-
-    if (text === "null") {
-        alert("Please enter a question.");
-        return;
+async function askAssistant() {
+    const question = document.getElementById('inputText').value;
+  
+    if (!question) {
+      alert('Please enter a question.');
+      return;
     }
-
-    // Create a new chat completion
-    const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-            { role: "system", content: assistantPrompt },
-            {
-                role: "user",
-                content: "text",
-            },
-        ],
-    });
-    console.log(completion.choices[0].message.content);
-    return;
-}
-
-export { askAssistant };
+  
+    try {
+      const response = await fetch('/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ question })
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        document.getElementById('output').innerText = data.response_format;
+      } else {
+        alert(data.error || 'An error occurred while processing your request.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred. Please try again later.');
+    }
+  }
+  
+  // Attach event listener to the button
+  document.getElementById('submitBtn').addEventListener('click', askAssistant);
+  
