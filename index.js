@@ -8,9 +8,9 @@ const { zodResponseFormat } = require("openai/helpers/zod");
 
 const app = express();
 app.use(bodyParser.json());
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/public/'));
 
-// Initialize OpenAI with your API key (ensure this key is kept secret)
+// Initialize OpenAI with your API key
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, 
 });
@@ -47,6 +47,15 @@ app.post('/ask', async (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/public/templates/index.html');
+  });
+
+app.get('/app', (req, res) => {
+    res.sendFile(__dirname + '/public/templates/app.html');
+  });
+
 app.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
+    console.log('App is running on http://localhost:3000/app');
 });
