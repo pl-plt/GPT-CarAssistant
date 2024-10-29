@@ -3,11 +3,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/Addons.js';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
-import { int } from 'three/webgpu';
-//import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
+import GUI from 'lil-gui'
 
 let camera, scene, renderer;
 let raycaster = new THREE.Raycaster();
+
+let gui; 
 
 let controls;
 
@@ -93,6 +94,14 @@ function init() {
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
+
+    // GUI
+    gui = new GUI();
+    gui.add({ 'Get budget': getBudget}, 'Get budget');
+
+    const budgetFolder = gui.addFolder('Budget Output');
+    budgetFolder.open();
+    window.budgetFolder = budgetFolder;
 
     // EVENTS
     window.addEventListener( 'resize', onWindowResize );
@@ -279,3 +288,40 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+async function getBudget() {
+    try {
+        const response = await fetch('/diagnose', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ carState })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            window.budgetFolder.destroy();
+            window.budgetFolder = gui.addFolder('Budget Output');
+            window.budgetFolder.open();
+
+            window.budgetFolder.add({ 'Total Cost': data.total_cost }, 'Total Cost');
+
+            data.parts.forEach((part, index) => {
+                const partFolder = window.budgetFolder.addFolder(`Part ${index + 1}`);
+                partFolder.add({ 'Part Name': part.part_name }, 'Part Name');
+                partFolder.add({ 'Damage Level': part.damage_level }, 'Damage Level');
+                partFolder.add({ 'Cost': part.cost }, 'Cost');
+            });
+
+        } else {
+            alert(data.error || 'An error occurred while processing your request.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again later.');
+    }
+}
+
+export { carState }
